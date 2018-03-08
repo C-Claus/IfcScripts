@@ -10,7 +10,7 @@ import glob
 from collections import OrderedDict
 
 
-ifcfiles = raw_input('geef padnaam op: ')
+ifcfiles = raw_input('Enter Path: ')
 
 
 for IFC_file in ifcfiles:

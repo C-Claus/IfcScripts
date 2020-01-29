@@ -1,5 +1,7 @@
-
+#coding=utf-8
+#C.C.J. Claus 2020
 #!/usr/bin/env python
+
 
 import ifcopenshell 
 import lxml 
@@ -14,9 +16,7 @@ year = now.strftime("%Y")
 month = now.strftime("%m")
 day = now.strftime("%d")
 
-#fname = 'K:\\Huizen\\Projecten\\1425 Dobbebuurt Amsterdam\\02 Modellen, tekeningen en rapporten\\00 Architect\\00 BIM modellen\\Set 09-01-20\\20190326_Holtwoningen_bestaand_BWK_BLOK1.ifc'
-#fname = 'K:\\Huizen\\Projecten\\1457 Renovatie Flat 11 te Zeist\\02 Modellen, tekeningen en rapporten\\01 agNOVA architecten\\IFC bestanden\\20191211_17520_Flat 11 Zeist_AC21.ifc'
-fname = 'U:\\00_ifc_modellen\\BB-002-VO-BWK-DE COULISSE-SECTIE E-3430_RVT2019.ifc'
+fname = 'path_to_file/file.ifc'
 
 ifcfile = ifcopenshell.open(fname)
 products = ifcfile.by_type('IfcProduct')
@@ -26,8 +26,7 @@ head, tail = os.path.split(fname)
 
 
 
-
-entity = 'IfcSlab'
+entity = 'IfcWall'
 
 
 def get_software():
@@ -59,16 +58,18 @@ def get_quantities(products, entity):
                             
                             if entity == 'IfcWall':
                                 if "Revit" in get_software():
-                                
-                                    if quantities.Name ==  'GrossSideArea':
+                                    #GrossSideArea
+                                    if quantities.Name ==  'GrossArea' or quantities.Name == 'GrossSideArea':
                                         if product.IsDefinedBy:
                                             for j in product.IsDefinedBy:
                                                 if j.is_a("IfcRelDefinesByType"):
                                                     if j.RelatingType.Name:
                                                         type_list.append(str(j.RelatingType.Name))
-                                                        type_area_list.append([str(j.RelatingType.Name).replace('Basic Wall:',''), quantities.AreaValue])
+                                                        type_area_list.append([str(j.RelatingType.Name), quantities.AreaValue])
+                                                        #type_area_list.append([str(j.RelatingType.Name).replace('Basic Wall:',''), quantities.AreaValue])
                                 else:
-                                    if quantities.Name == 'NetSideArea':
+                                    #NetSideArea
+                                    if quantities.Name == 'NetArea' or quantities.Name == 'NetSideArea':
                                         if product.IsDefinedBy:
                                             for j in product.IsDefinedBy:
                                                 if j.is_a("IfcRelDefinesByType"):
@@ -77,7 +78,7 @@ def get_quantities(products, entity):
                                                         type_area_list.append([j.RelatingType.Name, quantities.AreaValue])
                                                         
                                                         
-                            if entity == 'IfcSlab': 
+                            if entity == 'IfcSlab':
                                 if "Revit" in get_software():    
                                     if quantities.Name == 'GrossArea':
                                         if product.IsDefinedBy:
@@ -101,7 +102,14 @@ def get_quantities(products, entity):
                                                         type_area_list.append([str(j.RelatingType.Name), quantities.AreaValue])
                             
                                                               
-                                                
+                            if entity == 'IfcCovering':
+                                if quantities.Name ==  'GrossArea':
+                                    if product.IsDefinedBy:
+                                        for j in product.IsDefinedBy:
+                                            if j.is_a("IfcRelDefinesByType"):
+                                                if j.RelatingType.Name:
+                                                    type_list.append(str(j.RelatingType.Name))
+                                                    type_area_list.append([str(j.RelatingType.Name), quantities.AreaValue])                    
      
     print ('type_list:', type_list)       
     result = defaultdict(int)
@@ -136,7 +144,7 @@ def create_quantities_bcsv(file_name, bouwdeel):
         #I think &#xb2; or &#178; should work.
         smartview = ET.SubElement(smartviews, "SMARTVIEW")
         
-        smartview_title = ET.SubElement(smartview, "TITLE").text = str(entity_type) + ' (oppervlakte: ' + str(round(value, 2)) + 'm' + '2' + ')'
+        smartview_title = ET.SubElement(smartview, "TITLE").text = str(entity_type) + ' (oppervlakte: ' + str(round(value, 2)) + 'm' + "\u00b2" + ')'
         smartview_description = ET.SubElement(smartview, "DESCRIPTION")
         smartview_creator = ET.SubElement(smartview, "CREATOR").text = "Coen Hagedoorn Bouwgroep"
         smartview_creation_date = ET.SubElement(smartview, "CREATIONDATE").text = day + " " + month + " " + year
@@ -207,3 +215,9 @@ if entity == 'IfcWall':
 
 if entity == 'IfcSlab':
     create_quantities_bcsv(file_name='floor_takeoff_' + str(tail) + '.bcsv', bouwdeel='opp. vloeren ')
+
+if entity == 'IfcCovering':
+    create_quantities_bcsv(file_name='covering_takeoff_' + str(tail) + '.bcsv', bouwdeel='opp. plafonds en afwerkingen ')
+    
+    
+    
